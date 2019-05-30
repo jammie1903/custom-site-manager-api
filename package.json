@@ -1,0 +1,45 @@
+{
+  "name": "custom-site-manager-api",
+  "version": "0.0.1",
+  "description": "custom site manager api",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "tsc && node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jammie1903/custom-site-manager-api.git"
+  },
+  "author": "Jamie Pennell",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jammie1903/custom-site-manager-api/issues"
+  },
+  "homepage": "https://github.com/jammie1903/custom-site-manager-api#readme",
+  "dependencies": {
+    "bcrypt": "^3.0.6",
+    "body-parser": "^1.19.0",
+    "debug": "^4.1.1",
+    "dotenv": "^8.0.0",
+    "express": "^4.17.1",
+    "express-utils": "git+https://github.com/jammie1903/express-utils.git",
+    "http-errors": "^1.7.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^3.2.6",
+    "morgan": "^1.9.1",
+    "node-fetch": "^2.6.0",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
+    "@types/debug": "^4.1.4",
+    "@types/dotenv": "^6.1.1",
+    "@types/http-errors": "^1.6.1",
+    "@types/mongodb": "^3.1.27",
+    "@types/node": "^12.0.3",
+    "typescript": "^3.4.5"
+  }
+}
