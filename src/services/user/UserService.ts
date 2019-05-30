@@ -7,7 +7,7 @@ import { IUserService } from "./IUserService";
 import Validator from "../../utils/Validator";
 import ValidationError from "../../utils/ValidationError";
 import { IMongoService } from "../mongo/IMongoService";
-import { IJwtService } from "../jwt/IJWTService";
+import { IJwtService } from "../jwt/IJwtService";
 import { ValidatorRules, Persisted } from "../../types";
 
 const userValidator: ValidatorRules<IUser> = {

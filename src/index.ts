@@ -4,7 +4,7 @@ config()
 import * as http from "http"
 import * as debug from "debug"
 
-import App from "./app"
+import App from "./App"
 
 debug("ts-express:server")
 
