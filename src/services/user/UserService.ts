@@ -1,28 +1,31 @@
-import { Service, Autowired } from "express-utils";
-import * as bcrypt from "bcrypt";
-import { Unauthorized } from "http-errors";
-import { Db } from "mongodb";
-import { IUser, IAuthenticationUser, IAuthenticationDetails } from "../../interfaces";
-import { IUserService } from "./IUserService";
-import Validator from "../../utils/Validator";
-import ValidationError from "../../utils/ValidationError";
-import { IMongoService } from "../mongo/IMongoService";
-import { IJwtService } from "../jwt/IJwtService";
-import { ValidatorRules, Persisted } from "../../types";
+import { Service, Autowired } from "express-utils"
+import * as bcrypt from "bcrypt"
+import { Unauthorized } from "http-errors"
+import { Db } from "mongodb"
+import { IUser, IAuthenticationUser, IAuthenticationDetails } from "../../interfaces"
+import { IUserService } from "./IUserService"
+import { Validator, ValidationError, isString } from "../../utils/Validation"
+import { IMongoService } from "../mongo/IMongoService"
+import { IJwtService } from "../jwt/IJwtService"
+import { ValidatorRules, Persisted } from "../../types"
 
 const userValidator: ValidatorRules<IUser> = {
-  email: user => typeof user.email !== 'string' || !user.email.trim() ? 'email must be specified' : null,
-  firstName: user => typeof user.firstName !== 'string' || !user.firstName.trim() ? 'firstName must be specified' : null,
-  lastName: user => typeof user.lastName !== 'string' || !user.lastName.trim() ? 'lastName must be specified' : null
+  ...isString('email'),
+  ...isString('firstName'),
+  ...isString('lastName')
 }
 
-const authenticationDetailsValidator: ValidatorRules<IAuthenticationDetails> = {
-  email: user => typeof user.email !== 'string' || !user.email.trim() ? 'email must be specified' : null,
+const newPasswordValidator: ValidatorRules<IAuthenticationDetails> = {
   password: user => {
-    if(typeof user.password !== 'string' || !user.password) return 'password must be specified';
-    if(user.password.length < 8 || !/[A-Z]/.test(user.password)) return 'password must be at least 8 charcters and contain at least one capital letter';
+    if(typeof user.password !== 'string' || !user.password) return 'password must be specified'
+    if(user.password.length < 8 || !/[A-Z]/.test(user.password)) return 'password must be at least 8 characters and contain at least one capital letter'
     return null
   },
+}
+
+const authenticationValidator: ValidatorRules<IAuthenticationDetails> = {
+  ...isString('email'),
+  ...isString('password', false)
 }
 
 @Service("userService")
@@ -33,7 +36,7 @@ export default class UserService implements IUserService {
   private jwtService: IJwtService
 
   public async login(details: IAuthenticationDetails): Promise<string> {
-    const errors = Validator.create(authenticationDetailsValidator).validate(details)
+    const errors = Validator.create(authenticationValidator).validate(details)
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -44,16 +47,16 @@ export default class UserService implements IUserService {
       throw new Unauthorized("Username or password were not valid")
     }
     
-    delete user.password;
-    return this.jwtService.create(user);
+    delete user.password
+    return this.jwtService.create(user)
   }
 
   private async getUser(db: Db, email: string): Promise<Persisted<IAuthenticationUser>> {
-    return this.mongoService.get(db, "users", {email})
+    return this.mongoService.get<IAuthenticationUser>(db, "users", {email})
   }
 
   public async createUser(details: IAuthenticationUser): Promise<string> {
-    const errors = Validator.create(userValidator).with(authenticationDetailsValidator).validate(details)
+    const errors = Validator.create(userValidator).with(newPasswordValidator).validate(details)
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -77,7 +80,7 @@ export default class UserService implements IUserService {
       })
     })
 
-    delete user.password;
-    return this.jwtService.create(user);
+    delete user.password
+    return this.jwtService.create(user)
   }
 }

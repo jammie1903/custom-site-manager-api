@@ -1,7 +1,5 @@
-import { ObjectId } from "bson";
+import { ObjectId } from "bson"
 
-export type Persisted<T> = {
-  [key in keyof T]?: any
-} & {
+export type Persisted<T> = T & {
   id: ObjectId
 }

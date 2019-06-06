@@ -26,6 +26,7 @@
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
     "express-utils": "git+https://github.com/jammie1903/express-utils.git",
+    "heroku-client": "^3.0.7",
     "http-errors": "^1.7.2",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.2.6",

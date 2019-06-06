@@ -1,4 +1,4 @@
-import { ValidatorRules, ValidatorResult } from "../types";
+import { ValidatorRules, ValidatorResult } from "../../types";
 
 function combine<X,Y>(x: ValidatorRules<X>, y: ValidatorRules<Y>): ValidatorRules<X & Y> {
   let returnValue: ValidatorRules<X & Y> = { ...(x as object) } as ValidatorRules<X & Y>;
