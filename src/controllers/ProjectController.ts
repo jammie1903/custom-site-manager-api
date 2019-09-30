@@ -13,7 +13,7 @@ export default class UserController {
   @Autowired()
   public deploymentService: IDeploymentService
 
-  @Get("/:id")
+  @Get("/:id([0-9a-fA-F]+)")
   public getProject(@TokenContents() user: Persisted<IUser>, @RequestParam('id') id : string): Promise<Persisted<IProject>> {
     return this.projectService.getProject(user.id, id)
   }
