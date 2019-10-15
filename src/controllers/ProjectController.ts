@@ -6,7 +6,7 @@ import { Persisted } from "../types"
 import { IDeploymentService } from "../services/deploy/IDeploymentService";
 
 @Controller("/project")
-export default class UserController {
+export default class ProjectController {
   @Autowired()
   public projectService: IProjectService
 
