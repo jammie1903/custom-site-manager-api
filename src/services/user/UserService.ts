@@ -36,7 +36,7 @@ export default class UserService implements IUserService {
   private jwtService: IJwtService
 
   public async login(details: IAuthenticationDetails): Promise<string> {
-    const errors = Validator.create(authenticationValidator).validate(details)
+    const errors = await Validator.create(authenticationValidator).validate(details)
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -56,7 +56,7 @@ export default class UserService implements IUserService {
   }
 
   public async createUser(details: IAuthenticationUser): Promise<string> {
-    const errors = Validator.create(userValidator).with(newPasswordValidator).validate(details)
+    const errors = await Validator.create(userValidator).with(newPasswordValidator).validate(details)
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }

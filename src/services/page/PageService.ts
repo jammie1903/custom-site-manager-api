@@ -5,7 +5,7 @@ import { Db } from 'mongodb'
 import { IProject, IUser, IPage, IPageTree } from '../../interfaces'
 import { Persisted, ValidatorRules } from '../../types'
 import { IMongoService } from '../mongo/IMongoService'
-import { isString, isGuid, ValidationError, Validator } from '../../utils/Validation'
+import { isString, isGuid, ValidationError, Validator, isProject, isPage, isFieldArray, PageValidator, isPrimitiveDictionary } from '../../utils/Validation'
 import { IPageService } from './IPageService';
 import { IProjectService } from '../project/IProjectService';
 
@@ -21,8 +21,8 @@ export default class PageService implements IPageService {
   @Autowired()
   private projectService: IProjectService
 
-  getPage(userId: ObjectId, pageId: string): Promise<Persisted<IPage>> {
-    const errors = Validator.create(isGuid('pageId')).validate({pageId})
+  async getPage(userId: ObjectId, pageId: string): Promise<Persisted<IPage>> {
+    const errors = await Validator.create(isGuid('pageId')).validate({pageId})
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -46,7 +46,7 @@ export default class PageService implements IPageService {
   }
 
   async getProjectPageTree(userId: ObjectId, projectId: string): Promise<IPageTree[]> {
-    const errors = Validator.create(isGuid('projectId')).validate({projectId})
+    const errors = await Validator.create(isGuid('projectId')).validate({projectId})
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -90,11 +90,78 @@ export default class PageService implements IPageService {
     return returnList;
   }
 
-  create(userId: ObjectId, page: IPage): Promise<Persisted<IPage>> {
-    throw new Error("Method not implemented.");
+  private getValidator(userId: ObjectId, forUpdate = false) : ValidatorRules<Persisted<IPage>> | ValidatorRules<IPage> {
+    const val : ValidatorRules<Persisted<IPage>> = {
+      ...(forUpdate ? isPage('id', userId, this) : {}),
+      ...isString('title'),
+      ...(!forUpdate ? isProject('projectId', userId, this.projectService) : {}),
+      ...isPage('parentId', userId, this, true),
+      ...isPrimitiveDictionary('fields'),
+      ...isFieldArray('customFields')
+    }
+    return val
   }
 
-  update(userId: ObjectId, page: Persisted<IPage>): Promise<Persisted<IPage>> {
-    throw new Error("Method not implemented.");
+  async create(userId: ObjectId, page: IPage): Promise<Persisted<IPage>> {
+    const pageValidator = this.getValidator(userId)
+    
+    const errors = await Validator.create(pageValidator).validate(page)
+
+    if(!errors.parentId && !errors.projectId) {
+      const parentPage = (pageValidator.parentId as PageValidator).page
+      if(parentPage && !parentPage.projectId.equals(page.projectId)) {
+        errors.parentId = 'parentId must belong to the same project'
+      }
+    }
+
+    if(Object.keys(errors).length) {
+      throw new ValidationError('Not all fields were present or correct', errors)
+    }
+
+    return this.mongoService.run(async db => {
+      const newPage = await this.mongoService.insert<IPage>(db, 'pages', {
+        customFields: page.customFields,
+        fields: page.fields,
+        layout: page.layout,
+        parentId: page.parentId,
+        projectId: page.projectId,
+        templateId: page.templateId,
+        title: page.title
+      })
+
+      return newPage
+    })
+  }
+
+  async update(userId: ObjectId, page: Persisted<IPage>): Promise<Persisted<IPage>> {
+    const pageValidator: ValidatorRules<Persisted<IPage>> = this.getValidator(userId, true)
+    
+    const errors = await Validator.create(pageValidator).validate(page)
+    const existingPage: Persisted<IPage> = (pageValidator.id as PageValidator).page
+
+    if(!errors.parentId && existingPage) {
+      const parentPage = (pageValidator.parentId as PageValidator).page
+      if(parentPage && !parentPage.projectId.equals(existingPage.projectId)) {
+        errors.parentId = 'parentId must belong to the same project'
+      }
+    }
+
+    if(Object.keys(errors).length) {
+      throw new ValidationError('Not all fields were present or correct', errors)
+    }
+
+    return this.mongoService.run(async db => {
+      const newPage = await this.mongoService.insert<IPage>(db, 'pages', {
+        customFields: page.customFields,
+        fields: page.fields,
+        layout: page.layout,
+        parentId: page.parentId,
+        projectId: existingPage.projectId,
+        templateId: page.templateId,
+        title: page.title
+      })
+
+      return newPage
+    })
   }
 }

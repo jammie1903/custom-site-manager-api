@@ -28,15 +28,15 @@ export default class Validator<T> {
     return new Validator(combine(this.rules, rules));
   }
 
-  public validate(item: T): ValidatorResult<T> {
+  public async validate(item: T): Promise<ValidatorResult<T>> {
     const returnObject: ValidatorResult<T> = {};
     for(let field in this.rules) {
-      const error = this.rules[field](item)
+      const error = await this.rules[field](item)
       if(error && error.length) {
         returnObject[field] = error
       }
     }
     
-    return returnObject;
+    return returnObject
   }
 }

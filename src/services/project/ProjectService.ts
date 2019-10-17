@@ -22,8 +22,8 @@ export default class ProjectService implements IProjectService {
   @Autowired()
   private deploymentService: IDeploymentService
   
-  public getProject(userId: ObjectId, projectId: string): Promise<Persisted<IProject>> {
-    const errors = Validator.create(isGuid('projectId')).validate({projectId})
+  public async getProject(userId: ObjectId, projectId: string): Promise<Persisted<IProject>> {
+    const errors = await Validator.create(isGuid('projectId')).validate({projectId})
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
@@ -62,7 +62,7 @@ export default class ProjectService implements IProjectService {
   }
 
   public async create(user: Persisted<IUser>, projectDetails: IProject): Promise<Persisted<IProject>> {
-    const errors = Validator.create(projectValidator).validate(projectDetails)
+    const errors = await Validator.create(projectValidator).validate(projectDetails)
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }

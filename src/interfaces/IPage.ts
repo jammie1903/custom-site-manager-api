@@ -6,7 +6,7 @@ export interface IPage {
   templateId?: ObjectId
   parentId?: ObjectId
   title: string // stored to avoid compilation serverside
-  fields: any
+  fields: {[key: string]: FieldValue}
   layout: ILayoutItem[]
   customFields: IField[]
 }
@@ -16,11 +16,13 @@ export interface IPageTree extends Persisted<{}> {
   children: IPageTree[]
 }
 
+export type FieldValue = string | boolean | number | Date
+
 export interface IField {
   name: string,
   type: string,
   required: boolean,
-  defaultValue: string
+  defaultValue?: FieldValue
 }
 
 export interface ILayoutItem {
