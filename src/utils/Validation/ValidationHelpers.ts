@@ -21,7 +21,7 @@ export function isPrimitiveDictionary<T>(key: keyof T, message?: string): Valida
   const validator = item => {
     const nonPrimitiveProperty = Object.keys(item[key])
       .find(k => !isFieldValue(item[key][k]))
-    return nonPrimitiveProperty ? null : message || `${key} must contain only string, number, boolean or date values`
+    return !nonPrimitiveProperty ? null : (message || `${key} must contain only string, number, boolean or date values`)
   }
 
   return {

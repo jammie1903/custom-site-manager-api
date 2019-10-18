@@ -2,17 +2,18 @@ import { ObjectId } from "bson"
 import { Persisted } from "../types";
 
 export interface IPage {
-  projectId: ObjectId
-  templateId?: ObjectId
-  parentId?: ObjectId
-  title: string // stored to avoid compilation serverside
+  projectId: ObjectId | string
+  templateId?: ObjectId | string
+  parentId?: ObjectId | string,
+  nextSiblingId?: ObjectId | string
+  name: string // stored to avoid compilation serverside
   fields: {[key: string]: FieldValue}
-  layout: ILayoutItem[]
+  layout: ILayoutItem[] | null
   customFields: IField[]
 }
 
 export interface IPageTree extends Persisted<{}> {
-  title: string
+  name: string
   children: IPageTree[]
 }
 

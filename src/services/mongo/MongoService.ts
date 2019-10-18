@@ -1,7 +1,7 @@
     
 import { Service } from "express-utils"
 import { IMongoService } from "./IMongoService"
-import { MongoClient, MongoError, Db, Cursor } from "mongodb"
+import { MongoClient, MongoError, Db, Cursor, FilterQuery } from "mongodb"
 import { Persisted } from "../../types";
 
 const connectionString = process.env.MONGO_CONNECTION_STRING
@@ -75,6 +75,17 @@ export default class MongoService implements IMongoService {
     const obj = {...data as object}
     delete (obj as any).id
     await db.collection(collection).updateOne({_id: id}, {$set: obj})
+  }
+
+  public async updateWhere<T extends object>(db: Db, collection: string, condition: FilterQuery<Persisted<T>>, data: Partial<T>): Promise<number> {
+    const c: FilterQuery<Persisted<T>> = {...condition as object}
+    if(c.id) {
+      (c as any)._id = c.id
+      delete c.id
+    }
+
+    const update = await db.collection(collection).updateMany(c, {$set: data})
+    return update.modifiedCount
   }
 
   public async delete<T extends object>(db: Db, collection: string, data: Persisted<T>): Promise<void> {
