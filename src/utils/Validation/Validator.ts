@@ -28,9 +28,11 @@ export default class Validator<T> {
     return new Validator(combine(this.rules, rules));
   }
 
-  public async validate(item: T): Promise<ValidatorResult<T>> {
+  public async validate(item: T, required: Array<keyof T> = null): Promise<ValidatorResult<T>> {
     const returnObject: ValidatorResult<T> = {};
     for(let field in this.rules) {
+      if(required != null && required.indexOf(field) === -1 && !item.hasOwnProperty(field)) continue
+
       const error = await this.rules[field](item)
       if(error && error.length) {
         returnObject[field] = error

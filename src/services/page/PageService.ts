@@ -113,6 +113,10 @@ export default class PageService implements IPageService {
   }
 
   private validateLinkedPages(pageValidator: ValidatorRules<IPage>, errors: ValidatorResult<IPage>, page: IPage) {
+    if(page.hasOwnProperty('nextSiblingId') && !page.hasOwnProperty('parentId')) {
+      errors.parentId = 'parentId must be specified if setting nextSiblingId'
+    }
+
     if(!errors.parentId && !errors.projectId) {
       const parentPage = (pageValidator.parentId as PageValidator).page
       if(!equals(parentPage.projectId, page.projectId)) {
@@ -170,54 +174,62 @@ export default class PageService implements IPageService {
         name: page.name
       })
 
-      await this.updateSiblingLinks(db, newPage.id, asObjectId(page.parentId), asObjectId(page.nextSiblingId))
+      await this.updateSiblingLinks(db, newPage.id, asObjectId(newPage.parentId), asObjectId(page.nextSiblingId))
 
       return newPage
     })
   }
 
-  async updateSiblingLinks(db: Db, id: ObjectId, parentId: ObjectId, siblingId: ObjectId, oldSiblingId?: ObjectId) {
-    await this.mongoService.updateWhere<IPage>(db, 'pages', {
-      nextSiblingId: siblingId,
-      parentId,
-      id: {$ne: id}
-    }, {nextSiblingId: id})
-
-    if(typeof oldSiblingId !== 'undefined') {
+  async updateSiblingLinks(db: Db, id: ObjectId, parentId: ObjectId, siblingId: ObjectId, oldParentId?: ObjectId, oldSiblingId?: ObjectId) {
+    // the page that used to point to this page now needs to point to where it used to point
+    // set nextSiblingId = oldSiblingId where nextSiblingId = id
+    if(typeof oldSiblingId !== 'undefined' && typeof oldParentId !== 'undefined') {
       await this.mongoService.updateWhere<IPage>(db, 'pages', {
         nextSiblingId: id,
-        parentId
+        parentId: oldParentId
       }, {nextSiblingId: oldSiblingId})
     }
+
+    // the page that used to point to this pages new sibling now needs to point to this page
+    // set nextSiblingId = id where nextSiblingId = siblingId
+    await this.mongoService.updateWhere<IPage>(db, 'pages', {
+      nextSiblingId: siblingId,
+      parentId,id: {$ne: id}
+    }, {nextSiblingId: id})
   }
 
   async update(userId: ObjectId, page: Persisted<IPage>): Promise<Persisted<IPage>> {
     const pageValidator: ValidatorRules<Persisted<IPage>> = this.getValidator(userId, true)
+    const errors = await Validator.create(pageValidator).validate(page, ['id'])
+    const existingPage: Persisted<IPage> = (pageValidator.id as PageValidator).page
     
-    const errors = await Validator.create(pageValidator).validate(page)
+    page.projectId = asObjectId(existingPage.projectId)
+
     this.validateLinkedPages(pageValidator, errors, page)
     
     if(Object.keys(errors).length) {
       throw new ValidationError('Not all fields were present or correct', errors)
     }
     
-    const existingPage: Persisted<IPage> = (pageValidator.id as PageValidator).page
     
     return this.mongoService.run(async db => {
-      const oldSiblingId = existingPage.nextSiblingId
-      const updatedPage = await this.mongoService.insert<IPage>(db, 'pages', {
-        customFields: page.customFields,
-        fields: page.fields,
-        layout: page.layout,
-        parentId: asObjectId(page.parentId),
-        projectId: asObjectId(existingPage.projectId),
-        nextSiblingId: asObjectId(page.nextSiblingId),
+      const updatedPage = {
+        id: asObjectId(existingPage.id),
+        customFields: page.hasOwnProperty('customFields') ? page.customFields : existingPage.customFields,
+        fields: page.hasOwnProperty('fields') ? page.fields : existingPage.fields,
+        layout: page.hasOwnProperty('layout') ? page.layout : existingPage.layout,
+        parentId: page.hasOwnProperty('parentId') ? asObjectId(page.parentId) : asObjectId(existingPage.parentId),
+        projectId: page.projectId,
+        nextSiblingId: page.hasOwnProperty('nextSiblingId') ? asObjectId(page.nextSiblingId) : asObjectId(existingPage.nextSiblingId),
         // templateId: page.templateId, disabled until tempates exist
-        name: page.name
-      })
-
-      if(!equals(oldSiblingId, page.nextSiblingId)) {
-        await this.updateSiblingLinks(db, updatedPage.id, asObjectId(page.parentId), asObjectId(page.nextSiblingId))
+        name: page.hasOwnProperty('name') ? page.name : existingPage.name
+      }
+      await this.mongoService.update<IPage>(db, 'pages', updatedPage)
+      
+      const oldSiblingId = existingPage.nextSiblingId
+      const oldParentId = existingPage.parentId
+      if(!equals(oldSiblingId, page.nextSiblingId) || !equals(oldParentId, page.parentId)) {
+        await this.updateSiblingLinks(db, existingPage.id, asObjectId(page.parentId), asObjectId(page.nextSiblingId), asObjectId(oldParentId), asObjectId(oldSiblingId))
       }
 
       return updatedPage
