@@ -21,10 +21,10 @@
   "homepage": "https://github.com/jammie1903/custom-site-manager-api#readme",
   "dependencies": {
     "bcrypt": "^3.0.6",
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.20.1",
     "debug": "^4.1.1",
     "dotenv": "^8.0.0",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "express-utils": "git+https://github.com/jammie1903/express-utils.git",
     "heroku-client": "^3.0.7",
     "http-errors": "^1.7.2",
