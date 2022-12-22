@@ -28,7 +28,7 @@
     "express-utils": "git+https://github.com/jammie1903/express-utils.git",
     "heroku-client": "^3.0.7",
     "http-errors": "^1.7.2",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "mongodb": "^3.2.6",
     "morgan": "^1.9.1",
     "node-fetch": "^2.6.0",
